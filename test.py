@@ -1,19 +1,10 @@
-import os
 import psutil
 import time
 import threading
+from subprocess import Popen
+import os
 
-def start_scripts():
-    """
-        This function will start the scripts.
-        Currently this is very buggy because if you have any other .ahk scripts running
-            this function will not run!!!
-    :return:
-    """
-    if is_process_running("AutoHotkey.exe"):
-        return
-    os.system("D:\poeTrade\Run_TradeMacro.ahk")
-    os.system("D:\poeScripts\macro.ahk")
+not_run = True
 
 def is_process_running(name):
     """
@@ -26,24 +17,47 @@ def is_process_running(name):
             return True
     return False
 
-def kill_scripts(is_run):
-    """
-        This function will kill every .ahk script that is running.
-    :return:
-    """
-    if is_run:
-        os.system("taskkill /f /im  AutoHotkey.exe")
-    else:
-        pass
-try:
+
+def start():
+    global not_run
+    trade = None
+    macro = None
     while 1:
         if is_process_running("PathOfExile_x64Steam.exe"):
-            t3 = threading.Thread(target=start_scripts)
-            t3.start()
+            if not_run:
+                trade = start_trade()
+                macro = start_macro()
+                not_run = False
+            else: pass
         else:
-            kill_scripts(is_process_running("AutoHotkey.exe"))
-        time.sleep(1)
-except Exception as e:
-    with open("error_log_file", "a") as f:
-        f.write(e)
-        f.close()
+            if not not_run:
+                #Popen("TASKKILL /F /PID {pid} /T"
+                #      .format(pid=trade.pid))
+                #trade.kill()
+                #macro.kill()
+                #Popen("TASKKILL /F /PID {pid} /T"
+                #      .format(pid=macro.pid))
+                os.system("taskkill /f /im  AutoHotkey.exe")
+                not_run = True
+            else: pass
+        time.sleep(5)
+
+
+def start_trade():
+    trade = Popen(
+        ["C:\Program Files\AutoHotkey\AutoHotKey.exe",
+         "D:\poeTrade\Run_TradeMacro.ahk"],
+        shell=False
+    )
+    return trade
+
+def start_macro():
+    macro = Popen(
+        ["C:\Program Files\AutoHotkey\AutoHotKey.exe",
+         "D:\poeScripts\macro.ahk"],
+        shell=False
+    )
+    return macro
+
+x = threading.Thread(target=start)
+x.start()
